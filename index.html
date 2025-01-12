@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive polynomial Solver</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+        }
+
+        .equation-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+            font-size: 1.25rem;
+        }
+
+        .coefficient-group {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin: 0 4px;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-card {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-card h3 {
+            margin-top: 0;
+            color: #4a5568;
+            font-size: 1rem;
+        }
+
+        .result-value {
+            font-family: monospace;
+            color: #2d3748;
+        }
+
+        .graph-container {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            height: 400px;
+            position: relative;
+        }
+        
+        .control-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background: #4299e1;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .control-button:hover {
+            background: #3182ce;
+        }
+        
+        .clear-button {
+            background: #f56565;
+        }
+
+        .clear-button:hover {
+            background: #e53e3e;
+        }
+
+        .toggle-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e0;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #4299e1;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        @media (max-width: 800px) {
+    input[type="number"] {
+        width: 20px;
+        margin: 0 2px; 
+        padding: 4px;
+        font-size: 0.8rem;
+    }
+
+    .equation-input {
+        gap: 0.25rem;
+        font-size: 1rem;
+    }
+    
+    .control-button{
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Polynomial Equation Solver</h1>
+        
+        <div class="equation-input">
+            <div class="coefficient-group">
+                <input type="number" id="A" value="" step="any" oninput="updateEquation()" onkeydown="handleKeyPress(event, 'B')">
+                <span>x³</span>
+            </div>
+            <span>+</span>
+            <div class="coefficient-group">
+                <input type="number" id="B" value="" step="any" oninput="updateEquation()" onkeydown="handleKeyPress(event, 'C')">
+                <span>x²</span>
+            </div>
+            <span>+</span>
+            <div class="coefficient-group">
+                <input type="number" id="C" value="" step="any" oninput="updateEquation()" onkeydown="handleKeyPress(event, 'D')">
+                <span>x</span>
+            </div>
+            <span>+</span>
+            <div class="coefficient-group">
+                <input type="number" id="D" value="" step="any" oninput="updateEquation()" onkeydown="handleKeyPress(event, 'A')">
+            </div>
+            <span>= 0</span>
+            <button class="control-button clear-button" onclick="clearInputs()">Clear</button>
+        </div>
+
+        <div class="results-grid" id="results"></div>
+        
+        <div class="graph-container">
+            <canvas id="graph"></canvas>
+        </div>
+
+        <div class="toggle-container">
+            <label class="toggle-label">
+                <span>Show Roots</span>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="showRoots" checked onchange="updateGraph()">
+                    <span class="toggle-slider"></span>
+                </div>
+            </label>
+            <label class="toggle-label">
+                <span>Show Y-Intercept</span>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="showYIntercept" checked onchange="updateGraph()">
+                    <span class="toggle-slider"></span>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        let currentRoots = [];
+        
+        function handleKeyPress(event, nextInputId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById(nextInputId).focus();
+            }
+        }
+        
+         function clearInputs() {
+            document.getElementById('A').value = '';
+            document.getElementById('B').value = '';
+            document.getElementById('C').value = '';
+            document.getElementById('D').value = '';
+            updateEquation();
+        }
+
+        function updateEquation() {
+            const A = parseFloat(document.getElementById('A').value) || 0;
+            const B = parseFloat(document.getElementById('B').value) || 0;
+            const C = parseFloat(document.getElementById('C').value) || 0;
+            const D = parseFloat(document.getElementById('D').value) || 0;
+
+            const results = [];
+            currentRoots = [];
+
+            if (A === 0 && B === 0 && C === 0 && D === 0) {
+                results.push({ title: "Solution", value: "All real numbers (identity equation)" });
+            } else if (A === 0 && B === 0 && C === 0) {
+                results.push({ title: "Solution", value: "No solution (contradiction)" });
+            } else if (A === 0 && B === 0) {
+                const x = -D / C;
+                currentRoots.push(x);
+                results.push({ title: "Linear Solution", value: `x = ${x.toFixed(4)}` });
+            } else if (A === 0) {
+                const discriminant = C * C - 4 * B * D;
+                if (discriminant > 0) {
+                    const x1 = (-C + Math.sqrt(discriminant)) / (2 * B);
+                    const x2 = (-C - Math.sqrt(discriminant)) / (2 * B);
+                    currentRoots.push(x1, x2);
+                    currentRoots.sort((a, b) => a - b); // Sort roots
+                    results.push({ title: "First Root", value: `x₁ = ${currentRoots[0].toFixed(4)}` });
+                    results.push({ title: "Second Root", value: `x₂ = ${currentRoots[1].toFixed(4)}` });
+                } else if (discriminant === 0) {
+                    const x = -C / (2 * B);
+                    currentRoots.push(x);
+                    results.push({ title: "Double Root", value: `x = ${x.toFixed(4)}` });
+                } else {
+                    const realPart = -C / (2 * B);
+                    const imagPart = Math.sqrt(-discriminant) / (2 * B);
+                    results.push({ title: "Complex Root 1", value: `${realPart.toFixed(4)} + ${imagPart.toFixed(4)}i` });
+                    results.push({ title: "Complex Root 2", value: `${realPart.toFixed(4)} - ${imagPart.toFixed(4)}i` });
+                }
+            } else {
+                const roots = findCubicRoots(A, B, C, D);
+                currentRoots = roots.sort((a, b) => a - b); // Sort roots
+                currentRoots.forEach((root, index) => {
+                    results.push({ title: `Root ${index + 1}`, value: `x = ${root.toFixed(4)}` });
+                });
+            }
+
+            // Add y-intercept to results
+            results.push({ title: "Y-Intercept", value: `y = ${D.toFixed(4)}` });
+
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = results.map(result => `
+                <div class="result-card">
+                    <h3>${result.title}</h3>
+                    <div class="result-value">${result.value}</div>
+                </div>
+            `).join('');
+
+            updateGraph();
+        }
+
+        function findCubicRoots(A, B, C, D) {
+            // Convert to standard form: x³ + px² + qx + r
+            const p = B / A;
+            const q = C / A;
+            const r = D / A;
+
+            const p1 = p / 3.0;
+            const p2 = p1 * p1;
+            const p3 = p2 * p1;
+            
+            const a = q / 3.0 - p2;
+            const b = r + 2.0 * p3 - (p * q) / 3.0;
+            
+            const D0 = (a * a * a) + (b * b) / 4.0;
+
+            let roots = [];
+            
+            if (Math.abs(D0) < 1e-10) {
+                if (Math.abs(a) < 1e-10 && Math.abs(b) < 1e-10) {
+                    roots.push(-p1);
+                } else {
+                    const x1 = -b / (2.0 * a);
+                    roots.push(x1 - p1);
+                    roots.push(-x1 / 2.0 - p1);
+                }
+            } else if (D0 > 0) {
+                const sqrt_D = Math.sqrt(D0);
+                const u = Math.cbrt(-b/2.0 + sqrt_D);
+                const v = Math.cbrt(-b/2.0 - sqrt_D);
+                roots.push(u + v - p1);
+            } else {
+                const phi = Math.acos(-b / (2.0 * Math.sqrt(-a * a * a))) / 3.0;
+                const sqrt_a = Math.sqrt(-a);
+                
+                roots.push(2.0 * sqrt_a * Math.cos(phi) - p1);
+                roots.push(2.0 * sqrt_a * Math.cos(phi + 2.0 * Math.PI / 3.0) - p1);
+                roots.push(2.0 * sqrt_a * Math.cos(phi + 4.0 * Math.PI / 3.0) - p1);
+            }
+
+            const epsilon = 1e-10;
+            return roots
+                .filter(root => !isNaN(root))
+                .filter((root, index, self) => 
+                    self.findIndex(r => Math.abs(r - root) < epsilon) === index
+                );
+        }
+
+        function evaluateCubic(x, A, B, C, D) {
+            return A * Math.pow(x, 3) + B * Math.pow(x, 2) + C * x + D;
+        }
+
+        function updateGraph() {
+            const A = parseFloat(document.getElementById('A').value) || 0;
+            const B = parseFloat(document.getElementById('B').value) || 0;
+            const C = parseFloat(document.getElementById('C').value) || 0;
+            const D = parseFloat(document.getElementById('D').value) || 0;
+
+            const showRoots = document.getElementById('showRoots').checked;
+            const showYIntercept = document.getElementById('showYIntercept').checked;
+
+            const points = [];
+            const xMin = -10;
+            const xMax = 10;
+            const step = 0.1;
+
+            let maxAbsY = 0;
+            for (let x = xMin; x <= xMax; x += step) {
+                const y = evaluateCubic(x, A, B, C, D);
+                maxAbsY = Math.max(maxAbsY, Math.abs(y));
+                points.push({ x, y });
+            }
+
+            const yLimit = Math.ceil(maxAbsY * 1.1);
+
+            const datasets = [{
+                label: 'f(x)',
+                data: points,
+                borderColor: '#4299e1',
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0
+            }];
+
+            if (showRoots && currentRoots.length > 0) {
+                datasets.push({
+                    label: 'Roots',
+                    data: currentRoots.map(x => ({ x, y: 0 })),
+                    backgroundColor: '#f56565',
+                    borderColor: '#f56565',
+                    pointRadius: 6,
+                    pointStyle: 'circle',
+                    showLine: false
+                });
+            }
+
+            if (showYIntercept) {
+                datasets.push({
+                    label: 'Y-Intercept',
+                    data: [{ x: 0, y: D }],
+                    backgroundColor: '#48bb78',
+                    borderColor: '#48bb78',
+                    pointRadius: 6,
+                    pointStyle: 'triangle',
+                    showLine: false
+                });
+            }
+
+            if (chart) {
+chart.destroy();
+            }
+
+            const ctx = document.getElementById('graph').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'center',
+                            min: xMin,
+                            max: xMax,
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'center',
+                            min: -yLimit,
+                            max: yLimit,
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === 'Roots') {
+                                        return `Root: x = ${context.parsed.x.toFixed(4)}`;
+                                    } else if (context.dataset.label === 'Y-Intercept') {
+                                        return `Y-Intercept: y = ${context.parsed.y.toFixed(4)}`;
+                                    }
+                                    return `y = ${context.parsed.y.toFixed(4)}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'xy',
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initial update
+        updateEquation();
+    </script>
+</body>
+</html>
